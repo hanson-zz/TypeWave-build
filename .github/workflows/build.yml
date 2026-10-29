@@ -1,0 +1,36 @@
+name: build
+
+# 只放编译脚本：临时取私有代码编译，结果推回私有库。代码不留在这里。
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 私有库分支或提交
+        default: timeline-edit
+      pack:
+        description: 出 DMG（1/0）
+        default: "1"
+
+concurrency:
+  group: build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: hanson-zz/TypeWave
+          ref: ${{ inputs.ref }}
+          token: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          path: src
+          persist-credentials: false
+      - name: 编译
+        working-directory: src
+        env:
+          TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+          PACK: ${{ inputs.pack }}
+        run: |
+          SHA=$(git rev-parse HEAD) bash ci/build.sh
